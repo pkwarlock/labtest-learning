@@ -1,0 +1,119 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  IMAGE_NAME: shellquest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t $IMAGE_NAME:${{ github.sha }} -t $IMAGE_NAME:latest .
+
+      - name: Login to DockerHub
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push to DockerHub
+        if: github.event_name == 'push'
+        run: |
+          docker tag $IMAGE_NAME:latest ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME:latest
+          docker tag $IMAGE_NAME:latest ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE_NAME:${{ github.sha }}
+
+      - name: Login to AWS ECR
+        if: github.event_name == 'push' && vars.AWS_ACCOUNT_ID != ''
+        uses: aws-actions/amazon-ecr-login@v2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Push to AWS ECR
+        if: github.event_name == 'push' && vars.AWS_ACCOUNT_ID != ''
+        run: |
+          ECR_REPO=${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION || 'us-east-1' }}.amazonaws.com/$IMAGE_NAME
+          docker tag $IMAGE_NAME:latest $ECR_REPO:latest
+          docker tag $IMAGE_NAME:latest $ECR_REPO:${{ github.sha }}
+          docker push $ECR_REPO:latest
+          docker push $ECR_REPO:${{ github.sha }}
+
+      - name: Login to Azure ACR
+        if: github.event_name == 'push' && vars.ACR_REGISTRY != ''
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ vars.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Push to Azure ACR
+        if: github.event_name == 'push' && vars.ACR_REGISTRY != ''
+        run: |
+          docker tag $IMAGE_NAME:latest ${{ vars.ACR_REGISTRY }}/$IMAGE_NAME:latest
+          docker tag $IMAGE_NAME:latest ${{ vars.ACR_REGISTRY }}/$IMAGE_NAME:${{ github.sha }}
+          docker push ${{ vars.ACR_REGISTRY }}/$IMAGE_NAME:latest
+          docker push ${{ vars.ACR_REGISTRY }}/$IMAGE_NAME:${{ github.sha }}
+
+  deploy-ec2:
+    needs: build
+    if: github.event_name == 'push' && vars.EC2_HOST != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            aws ecr get-login-password --region ${{ vars.AWS_REGION || 'us-east-1' }} | docker login --username AWS --password-stdin ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION || 'us-east-1' }}.amazonaws.com
+            docker pull ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION || 'us-east-1' }}.amazonaws.com/shellquest:latest
+            docker stop shellquest || true
+            docker rm shellquest || true
+            docker run -d --name shellquest --restart always -p 80:80 ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION || 'us-east-1' }}.amazonaws.com/shellquest:latest
+
+  deploy-azure:
+    needs: build
+    if: github.event_name == 'push' && vars.AZURE_WEBAPP_NAME != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          images: ${{ vars.ACR_REGISTRY }}/shellquest:${{ github.sha }}
+
+  deploy-k8s:
+    needs: build
+    if: github.event_name == 'push' && vars.K8S_CLUSTER != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig
+        run: echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/shellquest shellquest=${{ secrets.DOCKERHUB_USERNAME }}/shellquest:${{ github.sha }}
+          kubectl rollout status deployment/shellquest
