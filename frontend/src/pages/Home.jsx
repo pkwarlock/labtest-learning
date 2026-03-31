@@ -4,10 +4,10 @@ export default function Home() {
   return (
     <div className="home-page">
       <h1 className="title">ShellQuest</h1>
-      <p className="subtitle">เรียนรู้ Shell Script ผ่านเกม</p>
+      <p className="subtitle">เรียนรู้ Cloud & DevOps ผ่านเกม</p>
       <p className="description">
-        ฝึกเขียน Shell Script และเรียนรู้ AWS, Azure, DevOps, GitOps, ArgoCD ผ่าน 110 ด่านที่ท้าทาย
-        เรียนรู้คำสั่งจริง ลองเขียนโค้ดจริง และพัฒนาทักษะของคุณทีละขั้นตอน
+        เรียนรู้ AWS, Azure, DevOps, GitOps และ ArgoCD ผ่าน 110 บทเรียนที่ละเอียด
+        พร้อมบททดสอบความเข้าใจ พัฒนาทักษะ Cloud & DevOps ทีละขั้นตอน
       </p>
       <div className="stats-grid">
         <div className="stat-item">

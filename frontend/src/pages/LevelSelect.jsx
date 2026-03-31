@@ -34,7 +34,7 @@ export default function LevelSelect() {
       <div className="level-select">
         <h2 className="page-title">เลือกด่าน</h2>
         <div className="category-tabs">
-          {[['all','ทั้งหมด'],['basic','Basic'],['advanced','Advanced'],['aws','AWS'],['azure','Azure'],['devops','DevOps'],['gitops','GitOps'],['argocd','ArgoCD']].map(([k,v]) => (
+          {[['all','ทั้งหมด'],['aws','AWS'],['azure','Azure'],['devops','DevOps'],['gitops','GitOps'],['argocd','ArgoCD']].map(([k,v]) => (
             <button key={k} className={`tab-btn ${tab===k?'active':''}`} onClick={() => setTab(k)}>{v}</button>
           ))}
         </div>
