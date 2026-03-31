@@ -122,6 +122,8 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 0.5rem;
 }
 .level-title { font-size: 1.1rem; margin-bottom: 0.5rem; }
+.level-type { color: #888; font-size: 0.8rem; }
+.lesson-card { border-left: 4px solid #4ecca3; }
 .difficulty-stars { color: #f1c40f; margin-bottom: 0.3rem; }
 .completed-check { position: absolute; top: 1rem; right: 1rem; color: #4ecca3; font-size: 1.2rem; }
 
@@ -297,6 +299,41 @@ a { color: inherit; text-decoration: none; }
   font-family: 'Courier New', monospace;
   font-size: 0.9rem;
   color: #ddd;
+}
+
+/* Lesson Page (read-only) */
+.lesson-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+.lesson-header { margin-bottom: 1.5rem; }
+.lesson-header h2 { margin-top: 0.5rem; }
+.lesson-category {
+  background: #e94560;
+  color: white;
+  padding: 0.2rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+.lesson-full {
+  background: #1a1a2e;
+  border-left: 4px solid #4ecca3;
+  padding: 1.5rem;
+  border-radius: 0 12px 12px 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 2;
+  font-family: 'Courier New', monospace;
+  font-size: 0.95rem;
+  color: #ddd;
+  margin-bottom: 1.5rem;
+}
+.lesson-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 /* Responsive */

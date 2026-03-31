@@ -47,21 +47,64 @@ export default function GamePlay() {
     })
   }
 
+  const markRead = () => {
+    const prog = JSON.parse(localStorage.getItem('shellquest-progress') || '[]')
+    if (!prog.includes(Number(id))) {
+      prog.push(Number(id))
+      localStorage.setItem('shellquest-progress', JSON.stringify(prog))
+    }
+    setShowModal(true)
+  }
+
   if (!level) return <div style={{padding:'2rem',textAlign:'center'}}>กำลังโหลด...</div>
 
   const numId = Number(id)
+  const isLessonOnly = level.type === 'lesson'
+
+  if (isLessonOnly) {
+    return (
+      <div>
+        <nav className="nav">
+          <Link to="/levels" className="nav-logo">← กลับ</Link>
+          <div className="nav-links"><span>บทที่ {id}</span></div>
+        </nav>
+        <div className="lesson-page">
+          <div className="lesson-header">
+            <span className="lesson-category">{level.category.toUpperCase()}</span>
+            <h2>{level.title}</h2>
+          </div>
+          <pre className="lesson-full">{level.lesson}</pre>
+          <div className="lesson-actions">
+            {numId > 1 && <button className="btn-nav" onClick={() => navigate(`/play/${numId-1}`)}>← บทก่อนหน้า</button>}
+            <button className="btn-validate" onClick={markRead}>✓ อ่านจบแล้ว</button>
+            {numId < 110 && <button className="btn-nav" onClick={() => navigate(`/play/${numId+1}`)}>บทถัดไป →</button>}
+          </div>
+        </div>
+        {showModal && (
+          <div className="success-modal">
+            <div className="modal-card">
+              <div className="modal-icon">📖</div>
+              <div className="modal-title">อ่านจบแล้ว!</div>
+              <div className="modal-msg">บทที่ {id}: {level.title}</div>
+              {numId < 110
+                ? <button className="btn-next" onClick={() => navigate(`/play/${numId+1}`)}>บทถัดไป →</button>
+                : <button className="btn-next" onClick={() => navigate('/levels')}>กลับหน้าเลือกบท</button>}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div>
       <nav className="nav">
         <Link to="/levels" className="nav-logo">← กลับ</Link>
-        <div className="nav-links">
-          <span>ด่านที่ {id}</span>
-        </div>
+        <div className="nav-links"><span>ด่านที่ {id}</span></div>
       </nav>
       <div className="gameplay">
         <div className="instructions-panel">
-          <div className="level-number">ด่านที่ {id} / 110</div>
+          <div className="level-number">ด่านที่ {id} / 60</div>
           <h2>{level.title}</h2>
           {level.lesson && (
             <div className="lesson-box">

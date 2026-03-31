@@ -20,7 +20,7 @@ export default function LevelSelect() {
     return acc
   }, [])
 
-  const isUnlocked = (lvl, i) => {
+  const isUnlocked = (lvl) => {
     if (categoryFirstIds.includes(lvl.id)) return true
     return progress.includes(lvl.id - 1)
   }
@@ -32,9 +32,9 @@ export default function LevelSelect() {
         <div className="nav-links"><Link to="/">หน้าแรก</Link></div>
       </nav>
       <div className="level-select">
-        <h2 className="page-title">เลือกด่าน</h2>
+        <h2 className="page-title">เลือกบทเรียน</h2>
         <div className="category-tabs">
-          {[['all','ทั้งหมด'],['aws','AWS'],['azure','Azure'],['devops','DevOps'],['gitops','GitOps'],['argocd','ArgoCD']].map(([k,v]) => (
+          {[['all','ทั้งหมด'],['basic','Shell พื้นฐาน'],['advanced','Shell ขั้นสูง'],['aws','☁️ AWS'],['azure','☁️ Azure'],['devops','🔧 DevOps'],['gitops','🔄 GitOps'],['argocd','🚀 ArgoCD']].map(([k,v]) => (
             <button key={k} className={`tab-btn ${tab===k?'active':''}`} onClick={() => setTab(k)}>{v}</button>
           ))}
         </div>
@@ -42,14 +42,15 @@ export default function LevelSelect() {
           {filtered.map(lvl => {
             const done = progress.includes(lvl.id)
             const unlocked = isUnlocked(lvl)
+            const isLesson = lvl.type === 'lesson'
             return (
               <div key={lvl.id}
-                className={`level-card ${done?'completed':''} ${!unlocked?'locked':''}`}
+                className={`level-card ${done?'completed':''} ${!unlocked?'locked':''} ${isLesson?'lesson-card':''}`}
                 onClick={() => unlocked && navigate(`/play/${lvl.id}`)}>
-                {done && <span className="completed-check">✓</span>}
-                <span className="level-badge">#{lvl.id}</span>
+                {done && <span className="completed-check">{isLesson ? '📖' : '✓'}</span>}
+                <span className="level-badge">{isLesson ? '📖' : '⌨️'} #{lvl.id}</span>
                 <div className="level-title">{lvl.title}</div>
-                <div className="difficulty-stars">{'★'.repeat(lvl.difficulty || 1)}{'☆'.repeat(5 - (lvl.difficulty || 1))}</div>
+                <div className="level-type">{isLesson ? 'บทเรียน' : 'บททดสอบ'}</div>
               </div>
             )
           })}
